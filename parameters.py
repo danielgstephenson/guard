@@ -1,5 +1,7 @@
+import torch
 import colorsys
 from arcade.types import Color
+from math import cos, pi, sin
 
 def hsl_to_arcade_color(h: float, s: float, l: float, a=1.0)->Color:
     h_norm = h / 360.0
@@ -16,11 +18,23 @@ player_blade_color = hsl_to_arcade_color(195, 100, 50)
 bot_blade_color = hsl_to_arcade_color(140, 100, 45)
 floor_color = (0,0,0,255)
 
+window_size = 1000
 time_step = 0.02
 
 arena_radius = 500
 agent_radius = 15
-target_radius = 30
+target_radius = 40
 blade_radius = 25
 
-window_size = 1000
+agent_drag = 0.4
+blade_drag = 0.1
+spring_power = 2
+move_power = 50
+
+action_vector_list = [[0.0,0.0]]
+for i in range(8):
+    angle = 2 * pi * i / 8
+    vision_dir = [cos(angle), sin(angle)]
+    action_vector_list.append(vision_dir)
+action_vectors = torch.tensor(action_vector_list,dtype=torch.float)
+actions = torch.tensor([i for i in range(9)])
