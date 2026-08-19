@@ -1,9 +1,13 @@
+from collections import defaultdict
+from requests import get
 import torch
 import arcade
 from physics import step
+from sample import get_random_states
 from parameters import \
     window_size, time_step, arena_radius, agent_radius, blade_radius, \
-    wall_color, floor_color, bot_color, player_color, bot_blade_color, player_blade_color
+    wall_color, floor_color, bot_color, player_color, bot_blade_color, \
+    player_blade_color, guide_color, action_vectors, target_radius
 
 class Game(arcade.Window):
     def __init__(self):
@@ -13,14 +17,9 @@ class Game(arcade.Window):
         self.camera = arcade.Camera2D()
         self.camera.zoom = 0.9
         self.camera.position = (0,0)
-        self.state = torch.tensor([[
-            5,5,+300,200,
-            5,5,-300,200,
-            5,5,+20,200,
-            5,5,-20,200
-        ]],dtype=torch.float)
-        self.state = torch.cat((self.state,self.state),dim=0)
-        
+        self.state = get_random_states(1)
+        self.pressed = defaultdict(lambda: False)
+        self.paused = True
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float):
        self.camera.zoom *= 1 + 0.1*scroll_y
@@ -37,6 +36,7 @@ class Game(arcade.Window):
         player_blade_x = self.state[0,14].item()
         player_blade_y = self.state[0,15].item()
         arcade.draw_circle_filled(0,0,arena_radius,floor_color)
+        arcade.draw_circle_outline(0,0,target_radius,guide_color)
         arcade.draw_line(bot_blade_x,bot_blade_y,bot_x,bot_y,bot_blade_color,0.1*agent_radius)
         arcade.draw_line(player_blade_x,player_blade_y,player_x,player_y,player_blade_color,0.1*agent_radius)
         arcade.draw_circle_filled(bot_blade_x,bot_blade_y,blade_radius,bot_blade_color)
@@ -45,9 +45,36 @@ class Game(arcade.Window):
         arcade.draw_circle_filled(player_x,player_y,agent_radius,player_color)
 
     def on_update(self, delta_time: float) -> bool | None:
+        if self.paused: return
         action0 = torch.tensor([0])
-        action1 = torch.tensor([0])
+        action1 = torch.tensor([self.get_user_action()])
         self.state = step(self.state,action0,action1)
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        self.pressed[symbol] = True
+
+    def on_key_release(self, symbol: int, modifiers: int):
+        self.pressed[symbol] = False
+        if symbol == arcade.key.SPACE:
+            self.paused = not self.paused
+
+    def get_user_action(self)->int:
+        dx = 0.0
+        dy = 0.0
+        if self.pressed[arcade.key.W] or self.pressed[arcade.key.UP]:
+            dy += 1
+        if self.pressed[arcade.key.S] or self.pressed[arcade.key.DOWN]:
+            dy -= 1
+        if self.pressed[arcade.key.A] or self.pressed[arcade.key.LEFT]:
+            dx -= 1
+        if self.pressed[arcade.key.D] or self.pressed[arcade.key.RIGHT]:
+            dx += 1
+        action = 0
+        if dx != 0.0 or dy != 0.0:
+            vector = torch.tensor([dx,dy])
+            dots = torch.einsum('ij,j->i',action_vectors, vector)
+            action = int(torch.argmax(dots).item())
+        return action
         
 game = Game()
 game.run()
