@@ -36,7 +36,10 @@ class Game(arcade.Window):
         player_blade_x = self.state[0,14].item()
         player_blade_y = self.state[0,15].item()
         arcade.draw_circle_filled(0,0,arena_radius,floor_color)
-        arcade.draw_circle_outline(0,0,target_radius,guide_color)
+        arcade.draw_line(0,arena_radius,0,-arena_radius,guide_color,0.2*agent_radius)
+        arcade.draw_line(arena_radius,0,-arena_radius,0,guide_color,0.2*agent_radius)
+        arcade.draw_circle_filled(0,0,target_radius,floor_color)
+        arcade.draw_circle_outline(0,0,target_radius,guide_color,0.2*agent_radius)
         arcade.draw_line(bot_blade_x,bot_blade_y,bot_x,bot_y,bot_blade_color,0.1*agent_radius)
         arcade.draw_line(player_blade_x,player_blade_y,player_x,player_y,player_blade_color,0.1*agent_radius)
         arcade.draw_circle_filled(bot_blade_x,bot_blade_y,blade_radius,bot_blade_color)
@@ -57,6 +60,8 @@ class Game(arcade.Window):
         self.pressed[symbol] = False
         if symbol == arcade.key.SPACE:
             self.paused = not self.paused
+        if symbol == arcade.key.ENTER:
+            self.state = get_random_states(1)
 
     def get_user_action(self)->int:
         dx = 0.0

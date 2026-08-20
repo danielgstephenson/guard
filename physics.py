@@ -45,7 +45,7 @@ def collide_pair(entity0: Tensor, entity1, radius0: float, radius1: float)->tupl
     relative_velocity = velocity0 - velocity1
     dot = torch.einsum('ij,ij->i',relative_velocity,normal).unsqueeze(1)
     impact_speed = torch.where(dot>0, dot, 0)
-    impulse = impact_speed*normal
+    impulse = 0.5*impact_speed*normal
     shift = 0.5*overlap*normal
     velocity0 -= impulse
     velocity1 += impulse
@@ -74,7 +74,7 @@ def resolve(state:Tensor):
     agent1 = state[:,4:8]
     blade0 = state[:,8:12]
     blade1 = state[:,12:16]
-    # agent0, agent1 = collide_pair(agent0,agent1,agent_radius,agent_radius)
+    agent0, agent1 = collide_pair(agent0,agent1,agent_radius,agent_radius)
     blade0, blade1 = collide_pair(blade0,blade1,blade_radius,blade_radius)
     agent0 = collide_boundary(agent0,agent_radius)
     agent1 = collide_boundary(agent1,agent_radius)
