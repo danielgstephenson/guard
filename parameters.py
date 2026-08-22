@@ -39,5 +39,5 @@ for i in range(8):
 action_vectors = torch.tensor(action_vector_list,dtype=torch.float)
 actions = torch.tensor([i for i in range(9)])
 
-action_count = 9
+action_count = len(action_vector_list)
 state_size = 16

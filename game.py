@@ -1,5 +1,4 @@
 from collections import defaultdict
-from requests import get
 import torch
 import arcade
 from physics import get_next

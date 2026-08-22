@@ -1,8 +1,6 @@
-import torch
 from torch import nn, Tensor
-from torch.func import vmap, grad
 import torch.nn.functional as F
-from parameters import action_count, state_size
+from parameters import state_size
 
 class ValueModel(nn.Module):
     def __init__(self):

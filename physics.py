@@ -9,8 +9,8 @@ def integrate_entity(entity: Tensor, force: Tensor, drag: float)->Tensor:
     velocity = entity[:,0:2]
     position = entity[:,2:4]
     velocity = (1-drag*time_step)*velocity
-    velocity += time_step*force
-    position += time_step*velocity
+    velocity = velocity + time_step*force
+    position = position + time_step*velocity
     return torch.cat((velocity,position),1)
 
 def integrate(state:Tensor, action0: Tensor, action1: Tensor)->Tensor:
@@ -47,10 +47,10 @@ def collide_pair(entity0: Tensor, entity1, radius0: float, radius1: float)->tupl
     impact_speed = torch.where(dot>0, dot, 0)
     impulse = 0.5*impact_speed*normal
     shift = 0.5*overlap*normal
-    velocity0 -= impulse
-    velocity1 += impulse
-    position0 -= shift
-    position1 += shift
+    velocity0 = velocity0 - impulse
+    velocity1 = velocity1 + impulse
+    position0 = position0 - shift
+    position1 = position1 + shift
     entity0 = torch.cat((velocity0,position0),1)
     entity1 = torch.cat((velocity1,position1),1)
     return entity0, entity1
@@ -84,8 +84,8 @@ def resolve(state:Tensor):
 
 def get_respawn(agent: Tensor)->Tensor:
     position = agent[:,2:4]
-    position += 0.0001*(torch.rand_like(position)-0.5)
-    position = -(arena_radius-agent_radius)*F.normalize(position,p=2,dim=1)
+    position = position + 0.0001*(torch.rand_like(position)-0.5)
+    position = -(arena_radius-blade_radius)*F.normalize(position,p=2,dim=1)
     velocity = 0*position
     return torch.cat((velocity,position),1)
 

@@ -46,16 +46,10 @@ def generate(model: ValueModel, n: int, step_count: int, horizon: float, precisi
     end_prob = min(time_step/horizon,1.0) if horizon > 0 else 1.0
     state = start.clone()
     value = torch.zeros(n,1).float()
-    for step in range(step_count-1):
-        state = advance(state, model, precision)
+    for step in range(step_count):
         value += (1-end_prob)**step * end_prob * get_reward(state)
-    state = advance(state, model, precision)
+        state = advance(state, model, precision)
     value += (1-end_prob)**step_count * get_reward(state)
     return start, value
-
-model = ValueModel()
-state, value = generate(model, n=10, step_count=5, horizon=0.5, precision=1)
-print('state.shape',state.shape)
-print('value.shape',value.shape)
 
                                        
