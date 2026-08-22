@@ -66,7 +66,7 @@ def collide_boundary(entity: Tensor, radius: float)->Tensor:
     dotVelPos = torch.sum(velocity*position,dim=1,keepdim=True)
     dotPosPos = torch.sum(position*position,dim=1,keepdim=True)
     impact = torch.where(dotPosPos==0,0,position*dotVelPos/dotPosPos)
-    velocity = torch.where(overlap>0,velocity-2*impact,velocity)
+    velocity = torch.where(overlap>0,velocity-impact,velocity)
     return torch.cat((velocity,position),1)
 
 def resolve(state:Tensor):
