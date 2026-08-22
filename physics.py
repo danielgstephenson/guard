@@ -112,8 +112,7 @@ def strike(state: Tensor)->Tensor:
     blade1 = torch.where(hit1, respawn1, blade1)
     return torch.cat((agent0,agent1,blade0,blade1),1)
 
-
-def step(state:Tensor, action0: Tensor, action1: Tensor)->Tensor:
+def get_next(state:Tensor, action0: Tensor, action1: Tensor)->Tensor:
     state = integrate(state,action0,action1)
     state = resolve(state)
     state = strike(state)

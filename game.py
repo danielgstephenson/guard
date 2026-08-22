@@ -2,7 +2,7 @@ from collections import defaultdict
 from requests import get
 import torch
 import arcade
-from physics import step
+from physics import get_next
 from sample import get_random_states
 from parameters import \
     window_size, time_step, arena_radius, agent_radius, blade_radius, \
@@ -51,7 +51,7 @@ class Game(arcade.Window):
         if self.paused: return
         action0 = torch.tensor([0])
         action1 = torch.tensor([self.get_user_action()])
-        self.state = step(self.state,action0,action1)
+        self.state = get_next(self.state,action0,action1)
 
     def on_key_press(self, symbol: int, modifiers: int):
         self.pressed[symbol] = True
