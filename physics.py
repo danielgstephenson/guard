@@ -82,14 +82,7 @@ def resolve(state:Tensor):
     blade1 = collide_boundary(blade1,blade_radius)
     return torch.cat((agent0,agent1,blade0,blade1),1)
 
-def get_respawn(agent: Tensor)->Tensor:
-    position = agent[:,2:4]
-    position = position + 0.0001*(torch.rand_like(position)-0.5)
-    position = -(arena_radius-blade_radius)*F.normalize(position,p=2,dim=1)
-    velocity = 0*position
-    return torch.cat((velocity,position),1)
-
-def check_hit(agent: Tensor, blade: Tensor)->Tensor:
+def check_hit_pair(agent: Tensor, blade: Tensor)->Tensor:
     agent_position = agent[:,2:4]
     blade_position = blade[:,2:4]
     vector = agent_position-blade_position
@@ -97,23 +90,18 @@ def check_hit(agent: Tensor, blade: Tensor)->Tensor:
     min_dist = agent_radius + blade_radius
     return dist < min_dist
 
-def strike(state: Tensor)->Tensor:
+def check_hit(state:Tensor)->Tensor:
     agent0 = state[:,0:4]
     agent1 = state[:,4:8]
     blade0 = state[:,8:12]
     blade1 = state[:,12:16]
-    hit0 = check_hit(agent0,blade1)
-    hit1 = check_hit(agent1,blade0)
-    respawn0 = get_respawn(agent0)
-    respawn1 = get_respawn(agent1)
-    agent0 = torch.where(hit0, respawn0, agent0)
-    blade0 = torch.where(hit0, respawn0, blade0)
-    agent1 = torch.where(hit1, respawn1, agent1)
-    blade1 = torch.where(hit1, respawn1, blade1)
-    return torch.cat((agent0,agent1,blade0,blade1),1)
+    hit0 = check_hit_pair(agent0,blade1)
+    hit1 = check_hit_pair(agent1,blade0)
+    return hit0 | hit1
 
 def get_next(state:Tensor, action0: Tensor, action1: Tensor)->Tensor:
-    state = integrate(state,action0,action1)
-    state = resolve(state)
-    state = strike(state)
+    hit = check_hit(state)
+    new_state = integrate(state,action0,action1)
+    new_state = resolve(new_state)
+    state = torch.where(hit, state, new_state)
     return state

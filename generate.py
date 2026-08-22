@@ -1,9 +1,9 @@
 import torch
 from torch import Tensor
-from physics import get_next
+from physics import check_hit_pair, get_next
 from sample import get_random_states
 from value import ValueModel
-from parameters import actions, action_count, state_size, time_step
+from parameters import actions, action_count, state_size, time_step, arena_radius
 
 
 def get_choice0(state: Tensor, model: ValueModel, precision: float)->Tensor:
@@ -33,10 +33,17 @@ def get_choice1(state: Tensor, model: ValueModel, precision: float)->Tensor:
         return choice0
 
 def get_reward(state: Tensor)->Tensor:
-    a1pos = state[:,6:8]
-    return torch.sqrt(torch.sum(a1pos**2,dim=1,keepdim=True))
+    agent0 = state[:,0:4]
+    agent1 = state[:,4:8]
+    blade0 = state[:,8:12]
+    blade1 = state[:,12:16]
+    a1pos = agent1[:,2:4]
+    a1dist = torch.sqrt(torch.sum(a1pos**2,dim=1,keepdim=True))
+    hit0 = check_hit_pair(agent0,blade1)
+    hit1 = check_hit_pair(agent1,blade0)
+    return torch.where(hit1, 2*arena_radius, torch.where(hit0, -arena_radius, a1dist))
 
-def advance(state: Tensor,model: ValueModel,precision:float)->Tensor:
+def advance(state: Tensor, model: ValueModel, precision:float)->Tensor:
     action0 = get_choice0(state,model,precision)
     action1 = get_choice1(state,model,precision)
     return get_next(state, action0, action1)
