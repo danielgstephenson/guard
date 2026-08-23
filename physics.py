@@ -90,18 +90,18 @@ def check_hit_pair(agent: Tensor, blade: Tensor)->Tensor:
     min_dist = agent_radius + blade_radius
     return dist < min_dist
 
-def check_hit(state:Tensor)->Tensor:
+def check_hits(state:Tensor)->tuple[Tensor,Tensor]:
     agent0 = state[:,0:4]
     agent1 = state[:,4:8]
     blade0 = state[:,8:12]
     blade1 = state[:,12:16]
     hit0 = check_hit_pair(agent0,blade1)
     hit1 = check_hit_pair(agent1,blade0)
-    return hit0 | hit1
+    return hit0, hit1
 
 def get_next(state:Tensor, action0: Tensor, action1: Tensor)->Tensor:
-    hit = check_hit(state)
+    hit0, hit1 = check_hits(state)
     new_state = integrate(state,action0,action1)
     new_state = resolve(new_state)
-    state = torch.where(hit, state, new_state)
+    state = torch.where(hit0 | hit1, state, new_state)
     return state

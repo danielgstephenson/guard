@@ -41,3 +41,6 @@ actions = torch.tensor([i for i in range(9)])
 
 action_count = len(action_vector_list)
 state_size = 16
+
+hit1_value =  1.0
+hit0_value = -1.0

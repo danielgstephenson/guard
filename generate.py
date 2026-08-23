@@ -1,9 +1,10 @@
 import torch
 from torch import Tensor
-from physics import check_hit_pair, get_next
+from physics import get_next
 from sample import get_random_states
 from value import ValueModel
-from parameters import actions, action_count, state_size, time_step, arena_radius
+from parameters import actions, action_count, time_step
+from reward import get_reward
 
 
 def get_choice0(state: Tensor, model: ValueModel, precision: float)->Tensor:
@@ -15,7 +16,7 @@ def get_choice0(state: Tensor, model: ValueModel, precision: float)->Tensor:
         outcomes = get_next(outcomes,actions0,actions1)
         values = model(outcomes)
         action_values = torch.reshape(values,shape=(n,action_count))
-        probs = torch.softmax(precision*action_values,dim=1)
+        probs = torch.softmax(precision*action_values/time_step,dim=1)
         choice0 = torch.multinomial(probs,num_samples=1).reshape(n)
         return choice0
 
@@ -28,20 +29,9 @@ def get_choice1(state: Tensor, model: ValueModel, precision: float)->Tensor:
         outcomes = get_next(outcomes,actions0,actions1)
         values = model(outcomes)
         action_values = torch.reshape(values,shape=(n,action_count))
-        probs = torch.softmax(-precision*action_values,dim=1)
+        probs = torch.softmax(-precision*action_values/time_step,dim=1)
         choice0 = torch.multinomial(probs,num_samples=1).reshape(n)
         return choice0
-
-def get_reward(state: Tensor)->Tensor:
-    agent0 = state[:,0:4]
-    agent1 = state[:,4:8]
-    blade0 = state[:,8:12]
-    blade1 = state[:,12:16]
-    a1pos = agent1[:,2:4]
-    a1dist = torch.sqrt(torch.sum(a1pos**2,dim=1,keepdim=True))
-    hit0 = check_hit_pair(agent0,blade1)
-    hit1 = check_hit_pair(agent1,blade0)
-    return torch.where(hit1, 2*arena_radius, torch.where(hit0, -arena_radius, a1dist))
 
 def advance(state: Tensor, model: ValueModel, precision:float)->Tensor:
     action0 = get_choice0(state,model,precision)
@@ -56,7 +46,8 @@ def generate(model: ValueModel, n: int, step_count: int, horizon: float, precisi
     for step in range(step_count):
         value += (1-end_prob)**step * end_prob * get_reward(state)
         state = advance(state, model, precision)
-    value += (1-end_prob)**step_count * get_reward(state)
+    with torch.no_grad():
+        value += (1-end_prob)**step_count * model(state)
     return start, value
 
                                        
